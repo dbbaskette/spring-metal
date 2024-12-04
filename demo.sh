@@ -63,7 +63,7 @@ prepare-k8s() {
         
     sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/spring-metal.yml > .tanzu/config/spring-metal.yml
     
-    sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/httproute.yml > .tanzu/config/httproute.yml
+    #sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/httproute.yml > .tanzu/config/httproute.yml
       
     sed "s/APP_NAME/$APP_NAME/" runtime-configs/tpk8s/tanzu-config/genai-external-service.yml > .tanzu/config/genai-external-service.yml
     $SED_INPLACE_COMMAND "s|CHAT_MODEL_CAPABILITIES|$CHAT_MODEL_CAPABILITIES|" .tanzu/config/genai-external-service.yml 
