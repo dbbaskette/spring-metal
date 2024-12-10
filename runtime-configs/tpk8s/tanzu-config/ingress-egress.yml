@@ -1,13 +1,13 @@
 apiVersion: networking.tanzu.vmware.com/v1alpha1
 kind: DomainBinding
 metadata:
-  name: APP_NAME-domain
+  name: TPK8S_SUB_DOMAIN-domain
   namespace: default
 spec:
   autoAssign:
     port: false
     subdomainOf: ""
-  domain: APP_NAME.TPK8S_DOMAIN
+  domain: TPK8S_SUB_DOMAIN.TPK8S_DOMAIN
   entrypoint: main
   http: {}
   port: 80
@@ -45,9 +45,9 @@ spec:
     - tcp.TPCF_DOMAIN
     port:
       number: EGRESS_TCP_PORT
-      protocol: tcp
+      protocol: TCP
   - hosts:
     - genai-proxy.sys.TPCF_DOMAIN
     port:
       number: 443
-      protocol: https
+      protocol: HTTPS
