@@ -2,6 +2,11 @@
 
 APP_NAME="boneyard-assist" # overridable, necessary for TPK8s ingress route
 
+IMAGE_REGISTRY="harbor.vmtanzu.com/dekt"
+
+TPCF_DOMAIN="tas.vmtanzu.com" #do not include the sys.
+TPK8S_DOMAIN="vmtanzu.com" 
+
 PGVECTOR_SERVICE_NAME="boneyard-db-vector"
 PGVECTOR_PLAN_NAME="on-demand-postgres-db"
 
@@ -16,8 +21,6 @@ BASE_APP_DB="boneyard-db" #if you want to demo in two phases, no ai and then "ad
 
 #prepare k8s
 prepare-k8s() {
-
-    registry_folder=$1
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
         SED_INPLACE_COMMAND="sed -i.bak"
@@ -34,6 +37,7 @@ prepare-k8s() {
     PGVECTOR_SERVICE_JSON=$(cf curl "/v3/service_credential_bindings/$PGVECTOR_GUID/details") 
     PGVECTOR_HOST=$(echo -n $PGVECTOR_SERVICE_JSON | jq -r -c '.credentials.service_gateway.host' | base64)
     PGVECTOR_PORT=$(echo -n $PGVECTOR_SERVICE_JSON | jq -r -c '.credentials.service_gateway.port' | base64)
+    EGRESS_TCP_PORT=$(echo -n $PGVECTOR_SERVICE_JSON | jq -r -c '.credentials.service_gateway.port')
     PGVECTOR_USERNAME=$(echo -n $PGVECTOR_SERVICE_JSON | jq -r -c '.credentials.user' | base64)
     PGVECTOR_PASSWORD=$(echo -n $PGVECTOR_SERVICE_JSON | jq -r -c '.credentials.password'| base64)
 
@@ -59,11 +63,14 @@ prepare-k8s() {
     mkdir -p .tanzu/config
 
     sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/build-plan.yml > .tanzu//build-plan.yml
-    $SED_INPLACE_COMMAND "s|IMG_REGISTRY|harbor.vmtanzu.com\/$registry_folder|" .tanzu//build-plan.yml
+    $SED_INPLACE_COMMAND "s|IMG_REGISTRY|$IMAGE_REGISTRY|" .tanzu//build-plan.yml
         
     sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/spring-metal.yml > .tanzu/config/spring-metal.yml
     
-    #sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/httproute.yml > .tanzu/config/httproute.yml
+    sed "s/APP_NAME/$APP_NAME/g" runtime-configs/tpk8s/tanzu-config/ingress-egress.yml > .tanzu/config/ingress-egress.yml
+    $SED_INPLACE_COMMAND "s|TPCF_DOMAIN|$TPCF_DOMAIN|" .tanzu/config/ingress-egress.yml 
+    $SED_INPLACE_COMMAND "s|TPK8S_DOMAIN|$TPK8S_DOMAIN|" .tanzu/config/ingress-egress.yml 
+    $SED_INPLACE_COMMAND "s|EGRESS_TCP_PORT|$EGRESS_TCP_PORT|" .tanzu/config/ingress-egress.yml 
       
     sed "s/APP_NAME/$APP_NAME/" runtime-configs/tpk8s/tanzu-config/genai-external-service.yml > .tanzu/config/genai-external-service.yml
     $SED_INPLACE_COMMAND "s|CHAT_MODEL_CAPABILITIES|$CHAT_MODEL_CAPABILITIES|" .tanzu/config/genai-external-service.yml 
@@ -172,7 +179,7 @@ incorrect-usage() {
         
      echo && printf "\e[31m⏹ Incorrect usage. Please specify one of the following: \e[m\n"
      echo
-     echo "  prepare-k8s [registry name at harbor.vmtanzu.com]"
+     echo "  prepare-k8s"
      echo "  deploy-cf"
      echo "  deploy-cf-no-ai"
      echo "  deploy-k8s"
@@ -183,8 +190,7 @@ incorrect-usage() {
 #################### main ##########################
 case $1 in
 prepare-k8s)
-    if [[ "$2" == "" ]]; then incorrect-usage ; fi
-    prepare-k8s $2
+    prepare-k8s
     ;;
 deploy-cf)
     deploy-cf
