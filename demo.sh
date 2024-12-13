@@ -168,8 +168,8 @@ deploy-k8s () {
     tanzu deploy -y
 }    
 
-#cleanup
-cleanup () {
+#cleanup-cf
+cleanup-cf () {
 
     cf delete-service $PGVECTOR_SERVICE_NAME -f
     cf delete-service $BASE_APP_DB -f
@@ -177,6 +177,16 @@ cleanup () {
     cf delete-service $EMBEDDINGS_SERVICE_NAME -f
     cf delete $APP_NAME -f -r
     cf delete $BASE_APP_NAME -f -r
+}
+
+#cleanup-k8s
+cleanup-k8s () {
+
+    tanzu apps delete $APP_NAME -y
+    tanzu services delete PreProvisionedService/$PGVECTOR_SERVICE_NAME -y
+    tanzu services delete PreProvisionedService/$CHAT_SERVICE_NAME -y
+    tanzu services delete PreProvisionedService/$EMBEDDINGS_SERVICE_NAME  -y
+    
 }
 
 #incorrect usage
@@ -188,7 +198,8 @@ incorrect-usage() {
      echo "  deploy-cf"
      echo "  deploy-cf-no-ai"
      echo "  deploy-k8s"
-     echo "  cleanup"
+     echo "  cleanup-cf"
+     echo "  cleanup-k8s"
      echo
      exit
 }
@@ -206,8 +217,11 @@ deploy-cf-no-ai)
 deploy-k8s)
     deploy-k8s
     ;;
-cleanup)
-    cleanup
+cleanup-k8s)
+    cleanup-k8s
+    ;;
+cleanup-cf)
+    cleanup-cf
     ;;
 *)
     incorrect-usage
