@@ -14,24 +14,17 @@ This repository contains artifacts necessary to build and run generative AI appl
 ## Prerequisites
 - Ensure you have the latest version of the Tanzu CLI installed.
 - Access to a Route53 domain and necessary AWS permissions.
-- Configured egress settings (closed by default) to connect to external services.
-
+- Update the parameters in ```demo.sh``` according to your TPCF and TPK8s configurations
 
 ## Running the Demo
 
 #### Preperations
 
-- Update the parameters in ```demo.sh``` according to your TPCF configurations
 
-- cf runtime
 ```bash
 cf login -u admin -p YOUR_CF_ADMIN_PASSWORD
-cf target -o YOUR_ORG -s YOUR_SPACE //this space musy have acces to postgres and genai services
-```
-- k8s runtime
-
-```bash
-tanzu build config --build-plan-source-type=file  --build-plan-source [FULL PATH TO spring-metal folder]/.tanzu/build-plan.yml
+cf target -o YOUR_ORG -s YOUR_SPACE # this space must have access to postgres and genai services
+./demo.sh prepare-cf
 ./demo.sh prepare-k8s
 ```
 

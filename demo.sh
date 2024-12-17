@@ -128,13 +128,16 @@ create-ai-services () {
     cf create-service genai $EMBEDDINGS_PLAN_NAME $EMBEDDINGS_SERVICE_NAME 
 }
 
-#deploy cf 
-deploy-cf () {
-
+#prepare cf
+prepare-cf () {
     mvn clean package -DskipTests
   	
     create-db-service $PGVECTOR_SERVICE_NAME
     create-ai-services
+}
+
+#deploy cf 
+deploy-cf () {
 
     echo && printf "\e[37mℹ️  Deploying $APP_NAME application ...\e[m\n" && echo
     cf push $APP_NAME -f runtime-configs/tpcf/manifest.yml --no-start
@@ -194,6 +197,7 @@ incorrect-usage() {
         
      echo && printf "\e[31m⏹ Incorrect usage. Please specify one of the following: \e[m\n"
      echo
+     echo "  prepare-cf"
      echo "  prepare-k8s"
      echo "  deploy-cf"
      echo "  deploy-cf-no-ai"
@@ -205,6 +209,9 @@ incorrect-usage() {
 }
 #################### main ##########################
 case $1 in
+prepare-cf)
+    prepare-cf
+    ;;
 prepare-k8s)
     prepare-k8s
     ;;
