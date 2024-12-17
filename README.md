@@ -15,6 +15,7 @@ This repository contains artifacts necessary to build and run generative AI appl
 - Ensure you have the latest version of the Tanzu CLI installed.
 - Access to a Route53 domain and necessary AWS permissions.
 - Update the parameters in ```demo.sh``` according to your TPCF and TPK8s configurations
+- Follow the getting started guides for TPK8s
 
 ## Running the Demo
 
