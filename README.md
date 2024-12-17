@@ -32,7 +32,7 @@ cf target -o YOUR_ORG -s YOUR_SPACE //this space musy have acces to postgres and
 
 ```bash
 tanzu build config --build-plan-source-type=file  --build-plan-source [FULL PATH TO spring-metal folder]/.tanzu/build-plan.yml
-./demo.sh prepare-k8s [YOUR REGISTERY at harbor.vmtanzu.com]
+./demo.sh prepare-k8s
 ```
 
 #### Deployment
@@ -56,7 +56,8 @@ note: AI and db external services are bound as part of the deployment. You can b
 ### Cleanup
 
 ```bash
-./demo.sh cleanup
+./demo.sh cleanup-k8s #removes app and services from TPK8s space, but keep the space and its ingress/egress
+./demo.sh cleanup-cf #removes app and services from TPCF space
 ```
 
 ### Troubleshooting
