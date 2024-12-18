@@ -4,11 +4,12 @@ APP_NAME="boneyard-assist" # overridable, necessary for TPK8s ingress route
 
 IMAGE_REGISTRY="harbor.vmtanzu.com/dekt"
 
-TPCF_DOMAIN="tas.vmtanzu.com" #do not include the sys.
-#TPCF_DOMAIN="fdc.tpcf.tmm.lab"
+TPCF_DOMAIN="tas.vmtanzu.com" #do not include the sys subdomain
+#TPCF_DOMAIN="tcp.sdc.tpcf.tmm-labs.com"
 
 TPK8S_DOMAIN="vmtanzu.com" 
-#TPK8S_DOMAIN="tpsm.tmm.lab" 
+#TPK8S_DOMAIN="sdc.tpcf.tmm-labs.com" 
+
 TPK8S_SUB_DOMAIN="dekt-metal" # app will public route will be http://TPK8S_SUB_DOMAIN.TPK8S_SUB_DOMAIN 
 
 PGVECTOR_SERVICE_NAME="boneyard-db-vector"
