@@ -22,7 +22,7 @@ EMBEDDINGS_SERVICE_NAME="boneyard-embeddings"
 EMBEDDINGS_PLAN_NAME="embeddings-dev" # plan must have Embeddings capabilty
 
 BASE_APP_NAME="spring-metal" #if you want to demo in two phases, no ai and then "adding" AI assist, this would be the app name prior to add the AI assist
-BASE_APP_DB="boneyard-db" #if you want to demo in two phases, no ai and then "adding" AI assist, this would be the app name prior to add the AI assist
+BASE_APP_DB="boneyard-db" #if you want to demo in two phases, no ai and then "adding" AI assist, this would be the db name prior to add the AI assist
 
 #prepare k8s
 prepare-k8s() {
