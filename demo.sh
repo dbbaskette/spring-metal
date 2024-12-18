@@ -134,6 +134,7 @@ prepare-cf () {
     mvn clean package -DskipTests
   	
     create-db-service $PGVECTOR_SERVICE_NAME
+    create-db-service $BASE_APP_DB
     create-ai-services
 }
 
@@ -154,8 +155,6 @@ deploy-cf () {
 #deploy cf without ai assist
 deploy-cf-no-ai () {
     
-    create-db-service $BASE_APP_DB
-
     cf push $BASE_APP_NAME -f runtime-configs/tpcf/manifest.yml --no-start
     
     #since we do not bind to the LLM services, the llm spring profile is not activated and as a result chat-bot is not displayed
