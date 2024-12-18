@@ -19,7 +19,7 @@ CHAT_SERVICE_NAME="boneyard-chat"
 CHAT_PLAN_NAME="chat-dev" # plan must have chat capabilty
 
 EMBEDDINGS_SERVICE_NAME="boneyard-embeddings" 
-EMBEDDINGS_PLAN_NAME="embeddings" # plan must have Embeddings capabilty
+EMBEDDINGS_PLAN_NAME="text-embeddings" # plan must have Embeddings capabilty
 
 BASE_APP_NAME="spring-metal" #if you want to demo in two phases, no ai and then "adding" AI assist, this would be the app name prior to add the AI assist
 BASE_APP_DB="boneyard-db" #if you want to demo in two phases, no ai and then "adding" AI assist, this would be the db name prior to add the AI assist
@@ -134,7 +134,6 @@ prepare-cf () {
     mvn clean package -DskipTests
   	
     create-db-service $PGVECTOR_SERVICE_NAME
-    create-db-service $BASE_APP_DB
     create-ai-services
 }
 
@@ -155,6 +154,8 @@ deploy-cf () {
 #deploy cf without ai assist
 deploy-cf-no-ai () {
     
+    create-db-service $BASE_APP_DB
+    
     cf push $BASE_APP_NAME -f runtime-configs/tpcf/manifest.yml --no-start
     
     #since we do not bind to the LLM services, the llm spring profile is not activated and as a result chat-bot is not displayed
@@ -172,7 +173,7 @@ deploy-k8s () {
 }    
 
 #cleanup-cf
-cleanup-cf () {
+cleanup-cf() {
 
     cf delete-service $PGVECTOR_SERVICE_NAME -f
     cf delete-service $BASE_APP_DB -f
@@ -183,7 +184,7 @@ cleanup-cf () {
 }
 
 #cleanup-k8s
-cleanup-k8s () {
+cleanup-k8s() {
 
     tanzu apps delete $APP_NAME -y
     tanzu services delete PreProvisionedService/$PGVECTOR_SERVICE_NAME -y
