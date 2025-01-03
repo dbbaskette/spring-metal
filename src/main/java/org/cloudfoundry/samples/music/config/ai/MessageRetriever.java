@@ -55,7 +55,7 @@ public class MessageRetriever {
 
 		return this.chatClient
 				.prompt()
-				.advisors(new QuestionAnswerAdvisor(this.vectorStore, SearchRequest.defaults()))
+				.advisors(new QuestionAnswerAdvisor(this.vectorStore))
 				.user(message)
 				.call()
 				.content();
