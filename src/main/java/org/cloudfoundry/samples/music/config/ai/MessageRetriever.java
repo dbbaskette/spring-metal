@@ -77,7 +77,8 @@ public class MessageRetriever {
 	}
 
 	private Message getSystemMessage(List<Document> relatedDocuments) {
-		String documents = relatedDocuments.stream().map(entry -> entry.getContent()).collect(Collectors.joining("\n"));
+		String documents = relatedDocuments.stream().map(entry -> entry.getFormattedContent()).collect(Collectors.joining("\n"));
+	//	String documents = relatedDocuments.stream().map(entry -> entry.getContent()).collect(Collectors.joining("\n"));
 		SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemPrompt);
 		Message systemMessage = systemPromptTemplate.createMessage(Map.of("documents", documents));
 		return systemMessage;
