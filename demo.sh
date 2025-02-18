@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APP_NAME="boneyard-assist" # overridable, necessary for TPK8s ingress route
+APP_NAME="boneyard-agent" # overridable, necessary for TPK8s ingress route
 
 IMAGE_REGISTRY="harbor.vmtanzu.com/dekt"
 
