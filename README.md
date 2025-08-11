@@ -5,17 +5,8 @@
 ![PostgreSQL](https://img.shields.io/badge/postgres-15.1-red.svg)
 ![Tanzu](https://img.shields.io/badge/tanzu-platform-purple.svg)
 
-This repository contains artifacts necessary to build and run generative AI applications using Spring Boot and Tanzu Platform. The instructions below cover setup for both Cloud Foundry (cf) and Kubernetes (k8s) environments.
+This repository contains artifacts necessary to build and run generative AI applications using Spring Boot and Tanzu Platform. 
 
-## Architecture
-
-![Alt text](https://github.com/0pens0/spring-metal/blob/main/image.png?raw=true "Spring-metal AI topology")
-
-## Prerequisites
-- Ensure you have the latest version of the Tanzu CLI installed.
-- Access to a Route53 domain and necessary AWS permissions.
-- Update the parameters in ```demo.sh``` according to your TPCF and TPK8s configurations
-- Follow the getting started guides for TPK8s
 
 ## Running the Demo
 
@@ -23,41 +14,14 @@ This repository contains artifacts necessary to build and run generative AI appl
 
 
 ```bash
+
+mvn clean package
+
 cf login -u admin -p YOUR_CF_ADMIN_PASSWORD
-cf target -o YOUR_ORG -s YOUR_SPACE # this space must have access to postgres and genai services
-./demo.sh prepare-cf
-./demo.sh prepare-k8s
+cf target -o YOUR_ORG -s YOUR_SPACE # this space must have access to postgres with pgvector and genai services, multi model is supported
+
+cf push
 ```
-
-#### Deployment
-
-- cf runtime
-```bash
-cf login -u admin -p YOUR_CF_ADMIN_PASSWORD
-cf target -o YOUR_ORG -s YOUR_SPACE
-./demo.sh deploy-cf
-```
-- k8s runtime  
-```bash
-tanzu login
-tanzu context use <my-context>
-tanzu project use <my-project>
-tanzu space use <my-space>
-tanzu deploy
-```
-note: AI and db external services are bound as part of the deployment. You can bind to on-cluster services by using ```tanzu service create```
-
-### Cleanup
-
-```bash
-./demo.sh cleanup-k8s #removes app and services from TPK8s space, but keep the space and its ingress/egress
-./demo.sh cleanup-cf #removes app and services from TPCF space
-```
-
-### Troubleshooting
-
-#### Issue: Application deployment fails, or stuck in 'deploying'
-- **Solution:** In AppsMan->YOUR_SPACE->services->vector db instance->settings: manually enter ```"svc_gw_enable":true``` in the json area and redeploy
 
 
 ## Contributing
