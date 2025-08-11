@@ -39,8 +39,13 @@ public class AiConfiguration {
 	}
 
 	@Bean
-	public MessageRetriever messageRetriever(VectorStore vectorStore, GenaiLocator genaiLocator) {
-		return new MessageRetriever(vectorStore, genaiLocator);
+	public MessageRetriever messageRetriever(VectorStore vectorStore, ChatModel chatModel) {
+		return new MessageRetriever(vectorStore, chatModel);
+	}
+
+	@Bean
+	public ChatModel chatModel(GenaiLocator genaiLocator) {
+		return genaiLocator.getFirstAvailableChatModel();
 	}
 
 	@Bean
