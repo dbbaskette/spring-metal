@@ -18,6 +18,7 @@ package org.cloudfoundry.samples.music.config.ai;
 
 import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,4 +43,8 @@ public class AiConfiguration {
 		return new MessageRetriever(vectorStore, genaiLocator);
 	}
 
+	@Bean
+	public EmbeddingModel embeddingModel(GenaiLocator genaiLocator) {
+		return genaiLocator.getFirstAvailableEmbeddingModel();
+	}
 }
