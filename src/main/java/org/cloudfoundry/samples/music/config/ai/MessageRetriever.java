@@ -16,21 +16,21 @@
 
 package org.cloudfoundry.samples.music.config.ai;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import io.pivotal.cfenv.boot.genai.GenaiLocator;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -45,9 +45,9 @@ public class MessageRetriever {
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageRetriever.class);
 	
-	public MessageRetriever(VectorStore vectorStore, ChatModel chatModel) {
+	public MessageRetriever(VectorStore vectorStore, GenaiLocator genaiLocator) {
 		this.vectorStore = vectorStore;
-		this.chatClient = ChatClient.builder(chatModel).build();
+		this.chatClient = ChatClient.builder(genaiLocator.getFirstAvailableChatModel()).build();
 	}
 
 
