@@ -1,0 +1,13 @@
+---
+applications:
+- name: spring-metal
+  path: target/spring-metal-0.5.jar
+  buildpack: java_buildpack_offline
+  random-route: true
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+
+  services:
+    - boneyard-genai
+    - boneyard-db
+  
