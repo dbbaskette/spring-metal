@@ -19,12 +19,13 @@ package org.cloudfoundry.samples.music.config.ai;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
@@ -52,13 +53,33 @@ public class MessageRetriever {
 
 
 	public String retrieve(String message) {
+		logger.info("Processing RAG request for message: {}", message);
 
-		return this.chatClient
+		try {
+			// Create properly configured QuestionAnswerAdvisor
+			QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(this.vectorStore)
+				.searchRequest(SearchRequest.builder()
+					.similarityThreshold(0.3d)
+					.topK(5)
+					.build())
+				.build();
+
+			logger.info("Created QuestionAnswerAdvisor with similarity threshold 0.3 and topK 5");
+
+			String response = this.chatClient
 				.prompt()
-				.advisors(new QuestionAnswerAdvisor(this.vectorStore))
+				.advisors(qaAdvisor)
 				.user(message)
 				.call()
 				.content();
+
+			logger.info("RAG response generated successfully, length: {} characters", response.length());
+			return response;
+
+		} catch (Exception e) {
+			logger.error("Error during RAG processing", e);
+			return "I'm sorry, I encountered an error while processing your question: " + e.getMessage();
+		}
 
 		/* // hand rolled implementation
 		List<Document> relatedDocuments = this.vectorStore.similaritySearch(message);

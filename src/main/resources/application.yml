@@ -1,36 +1,86 @@
 spring:
-  ai:
-    vectorstore:
-      pgvector: 
-        initialize-schema: true
-        remove-existing-vector-store-table: true
-    openai:
-      api-key: "YOUR-KEY"
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local,llm}
   jpa:
     generate-ddl: true
+  http:
+    client:
+      factory: simple
+      timeout:
+        connection: 10s
+        read: 30s
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 16
+        queue-capacity: 100
+
 ---
-logging:
-  level:
-    root: INFO
+# Local Profile - for local development
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: "jdbc:postgresql://localhost:15432/music"
+    driver-class-name: org.postgresql.Driver
+    username: gpadmin
+    password: ${DB_PASSWORD:}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  ai:
+    openai:
+      base-url: http://127.0.0.1:1234
+      api-key: local-development-key
+      chat:
+        options:
+          model: qwen/qwen3-4b-2507
+          temperature: 0.7
+      embedding:
+        options:
+          model: text-embedding-nomic-embed-text-v2
+    retry:
+      max-attempts: 2
+      on-client-errors: false
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        remove-existing-vector-store-table: false
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 768
+
 ---
+# Cloud Profile - for Cloud Foundry deployment
+spring:
+  config:
+    activate:
+      on-profile: cloud
+  ai:
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        remove-existing-vector-store-table: false
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+
+---
+# HTTP2 Profile
 spring:
   config:
     activate:
       on-profile: http2
-
 server:
   http2:
     enabled: true
   port: 8443
-  #ssl:
-  #  enabled: true
-  #  key-alias: demo
-  #  key-store: classpath:keystore.bks
-  #  key-store-password: changeit
-  #  key-password: changeit
-  #  key-store-type: "BCFKS"
-    
+
 ---
+# MySQL Profile (optional)
 spring:
   config:
     activate:
@@ -46,17 +96,17 @@ spring:
         dialect: org.hibernate.dialect.MySQL55Dialect
 
 ---
+# LLM Profile - required for AI features
 spring:
-  datasource:
-    url: "jdbc:postgresql://localhost:15432/music"
-    driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: password
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-#tanzu:
-#  governance:
-#    fips:
-#      exit-on-failure: true
+  config:
+    activate:
+      on-profile: llm
+
+---
+logging:
+  level:
+    root: INFO
+    org.springframework.ai: DEBUG
+    org.springframework.ai.openai: TRACE
+    org.springframework.ai.vectorstore: DEBUG
+    org.springframework.web.client: DEBUG

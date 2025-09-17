@@ -21,14 +21,14 @@ import org.cloudfoundry.samples.music.web.AIController;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.scheduling.annotation.Async;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,34 +48,119 @@ public class VectorStoreInitializer implements ApplicationListener<ApplicationRe
 
     private static final Logger logger = LoggerFactory.getLogger(VectorStoreInitializer.class);
 
-    private VectorStore vectorStore;
+    private final VectorStore vectorStore;
 
-    private CrudRepository<Album, String> repository;
+    @Autowired
+    private CrudRepository<Album, String> albumRepository;
 
     public VectorStoreInitializer(VectorStore vectorStore) {
         this.vectorStore = vectorStore;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        this.repository =  BeanFactoryUtils.beanOfTypeIncludingAncestors(event.getApplicationContext(), CrudRepository.class);
-        Iterable<Album> albums = repository.findAll();
-        List<Document> documents = new ArrayList<>();
+        // Run vector store initialization asynchronously to prevent blocking startup
+        initializeAsync();
+    }
 
+    @Async
+    public void initializeAsync() {
+        try {
+            logger.info("=== Vector Store Initialization Starting ===");
 
-        List<Document> docs = this.vectorStore.similaritySearch("album");
-        logger.info("Vector store contains " + docs.size() + " records");
+            // Check if we have albums in the database
+            long albumCount = albumRepository.count();
+            logger.info("Found {} albums in database", albumCount);
 
-        if (docs.size() == 0) {
-            logger.info("Populating vector store");
-            for (Album album : albums) {
-
-                String albumDoc = AIController.generateVectorDoc(album);
-                documents.add(new Document(album.getId(), albumDoc, new HashMap<>()));
-
+            if (albumCount == 0) {
+                logger.warn("No albums found in database - vector store will be empty");
+                return;
             }
-            this.vectorStore.add(documents);
+
+            // Skip the similarity search check for now since it's hanging
+            // and just proceed with population
+            logger.info("Proceeding directly to vector store population...");
+            populateVectorStore();
+
+        } catch (Exception e) {
+            logger.error("Error during vector store initialization", e);
+        }
+    }
+
+    public void populateVectorStore() {
+        try {
+            logger.info("Starting vector store population...");
+
+            Iterable<Album> albums = albumRepository.findAll();
+            List<Document> documents = new ArrayList<>();
+
+            int count = 0;
+            for (Album album : albums) {
+                try {
+                    logger.debug("Processing album: {} - {}", album.getArtist(), album.getTitle());
+                    String albumDoc = AIController.generateVectorDoc(album);
+                    documents.add(new Document(album.getId(), albumDoc, new HashMap<>()));
+                    count++;
+                } catch (Exception e) {
+                    logger.error("Error preparing document for album {}: {}", album.getId(), e.getMessage());
+                }
+            }
+
+            logger.info("Prepared {} documents for vector store", count);
+
+            if (!documents.isEmpty()) {
+                // Start with just ONE document to test if embedding works at all
+                logger.info("Testing with single document first...");
+                List<Document> singleDoc = List.of(documents.get(0));
+
+                try {
+                    logger.info("Attempting to add single test document...");
+                    this.vectorStore.add(singleDoc);
+                    logger.info("SUCCESS: Single document added successfully!");
+
+                    // If that works, process the rest in batches
+                    logger.info("Proceeding with remaining documents in batches...");
+                    int batchSize = 3; // Smaller batches
+                    for (int i = 1; i < documents.size(); i += batchSize) {
+                        int endIndex = Math.min(i + batchSize, documents.size());
+                        List<Document> batch = documents.subList(i, endIndex);
+
+                        logger.info("Adding batch of {} documents (documents {}-{})...",
+                            batch.size(), i + 1, endIndex);
+
+                        try {
+                            this.vectorStore.add(batch);
+                            logger.info("Successfully added batch of {} documents", batch.size());
+                            Thread.sleep(2000); // Longer delay between batches
+
+                        } catch (Exception e) {
+                            logger.error("Error adding batch to vector store: {}", e.getMessage(), e);
+                            // Continue with next batch even if one fails
+                        }
+                    }
+
+                } catch (Exception e) {
+                    logger.error("FAILED: Could not add even a single document: {}", e.getMessage(), e);
+                    logger.error("This suggests the embedding service or vector store has a fundamental issue");
+                    return; // Don't continue if we can't even add one document
+                }
+
+                // Verify the addition worked
+                try {
+                    logger.info("Verifying vector store population...");
+                    List<Document> verifyDocs = this.vectorStore.similaritySearch("album");
+                    logger.info("Verification: Vector store now contains {} documents", verifyDocs.size());
+                } catch (Exception e) {
+                    logger.warn("Could not verify vector store contents: {}", e.getMessage());
+                }
+            } else {
+                logger.warn("No documents to add to vector store");
+            }
+
+            logger.info("=== Vector Store Initialization Complete ===");
+
+        } catch (Exception e) {
+            logger.error("Error populating vector store", e);
         }
     }
 }
