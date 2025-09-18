@@ -1,0 +1,212 @@
+<div id="mcp-settings" ng-init="init()">
+    <!-- Navigation Bar -->
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #444;">
+                    <li class="breadcrumb-item"><a href="#/" style="color: #00d084;"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                    <li class="breadcrumb-item active" style="color: #fff;">🔧 MCP Settings</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <div class="row">
+            <div class="col-md-8">
+                <br>
+                <h1><span class="glyphicon glyphicon-wrench" style="color: #00d084;"></span> Spring Metal MCP Integration</h1>
+                <p class="text-muted">Model Context Protocol integration powered by <strong>Spring AI</strong></p>
+            </div>
+            <div class="col-md-4 text-right" style="padding-top: 30px;">
+                <a href="#/" class="btn btn-info">
+                    <span class="glyphicon glyphicon-arrow-left"></span> Back to Albums
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP Status Section -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">MCP Client Status</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4>{{mcpStatus.status || 'Loading...'}}</h4>
+                            <p>{{mcpStatus.message}}</p>
+                            <small class="text-muted">{{mcpStatus.details}}</small>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <div class="btn-group" style="margin-bottom: 10px;">
+                                <button class="btn btn-success" ng-click="enableMcp()" ng-disabled="loading || mcpStatus.enabled">
+                                    <span class="glyphicon glyphicon-play"></span> Enable MCP
+                                </button>
+                                <button class="btn btn-warning" ng-click="disableMcp()" ng-disabled="loading || !mcpStatus.enabled">
+                                    <span class="glyphicon glyphicon-pause"></span> Disable MCP
+                                </button>
+                            </div>
+                            <br>
+                            <button class="btn btn-info" ng-click="refresh()">
+                                <span class="glyphicon glyphicon-refresh"></span> Refresh Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP Server Management -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-primary" style="border-color: #666; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);">
+                <div class="panel-heading" style="background: linear-gradient(135deg, #444 0%, #666 100%); border-color: #666;">
+                    <h3 class="panel-title" style="color: #fff;"><span class="glyphicon glyphicon-cog"></span> MCP Server Management</h3>
+                </div>
+                <div class="panel-body" style="background-color: #f8f8f8; border: 1px solid #666;">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 style="color: #333; margin-top: 0;">🎸 Configured MCP Servers</h4>
+                            <p class="text-muted">Manage your MCP server connections</p>
+
+                            <!-- Server List -->
+                            <div ng-show="configuredServers.length > 0">
+                                <div ng-repeat="server in configuredServers" class="well" style="margin: 10px 0;">
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            <h5 style="margin-top: 0;">
+                                                <strong>{{server.name}}</strong>
+                                                <span ng-if="mcpStatus.servers.indexOf(server.name) >= 0" class="label label-success" style="margin-left: 10px;">
+                                                    <span class="glyphicon glyphicon-ok"></span> Active
+                                                </span>
+                                                <span ng-if="mcpStatus.servers.indexOf(server.name) < 0" class="label label-warning" style="margin-left: 10px;">
+                                                    <span class="glyphicon glyphicon-time"></span> Configured
+                                                </span>
+                                            </h5>
+                                            <p class="text-muted" style="margin: 5px 0;">{{server.description || 'No description provided'}}</p>
+                                            <small class="text-muted">
+                                                <strong>URL:</strong> {{server.url}}<br>
+                                                <strong>Endpoint:</strong> {{server.endpoint}}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-2 text-right">
+                                            <button class="btn btn-danger btn-sm" ng-click="removeServer(server.name)">
+                                                <span class="glyphicon glyphicon-trash"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div ng-show="configuredServers.length === 0" class="alert alert-info">
+                                <span class="glyphicon glyphicon-info-sign"></span>
+                                No MCP servers configured. Add your first server using the form on the right.
+                            </div>
+
+                            <div class="alert alert-info" style="margin-top: 15px;">
+                                <span class="glyphicon glyphicon-info-sign"></span>
+                                <strong>How it works:</strong> Add MCP servers to provide additional tools that the AI can use to answer your questions.
+                                The LLM will automatically discover and use available tools based on your queries.
+                            </div>
+
+                            <div class="alert alert-info" style="margin-top: 10px; background-color: #e8f4f8; border-color: #1b809e;">
+                                <span class="glyphicon glyphicon-info-sign" style="color: #1b809e;"></span>
+                                <strong style="color: #1b809e;">Spring AI 1.1.0-M1 Behavior:</strong>
+                                <div style="margin-top: 8px; color: #31708f;">
+                                    • <strong>UI Server Addition:</strong> Servers added here are saved but require <strong>application restart</strong> for tool discovery<br>
+                                    • <strong>Immediate Availability:</strong> Configure servers in <code>application.yml</code> before startup<br>
+                                    • <strong>Future Versions:</strong> Dynamic server addition without restart will be available in newer Spring AI releases
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success" style="margin-top: 10px;">
+                                <span class="glyphicon glyphicon-book"></span>
+                                <strong>Configuration Guide:</strong> Add to <code>src/main/resources/application.yml</code>:
+                                <pre style="margin-top: 8px; background-color: #f8f8f8; padding: 8px; border-radius: 4px; font-size: 12px;">spring:
+  ai:
+    mcp:
+      client:
+        streamable-http:
+          connections:
+            audiodb:
+              uri: "http://localhost:8090/api/mcp"</pre>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <h4 style="color: #333; margin-top: 0;">➕ Add New Server</h4>
+                            <form ng-submit="addServer()">
+                                <div class="form-group">
+                                    <label for="serverName">Name</label>
+                                    <input type="text" class="form-control" id="serverName" ng-model="newServer.name" placeholder="e.g., AudioDB" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="serverUrl">URL</label>
+                                    <input type="text" class="form-control" id="serverUrl" ng-model="newServer.url" placeholder="e.g., http://localhost:8090" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="serverEndpoint">Endpoint</label>
+                                    <input type="text" class="form-control" id="serverEndpoint" ng-model="newServer.endpoint" placeholder="e.g., /api/mcp" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="serverDescription">Description</label>
+                                    <textarea class="form-control" id="serverDescription" ng-model="newServer.description" placeholder="Optional description" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block" ng-disabled="loading">
+                                    <span class="glyphicon glyphicon-plus"></span> Add Server
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Test RAG with MCP -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Test MCP Integration</h3>
+                </div>
+                <div class="panel-body">
+                    <p>Test the RAG system with automatic MCP tool integration:</p>
+                    <button class="btn btn-success" ng-click="testMcpRag()">
+                        <span class="glyphicon glyphicon-play"></span> Test: "What albums did The Beatles release?"
+                    </button>
+
+                    <div ng-show="ragResponse" class="well" style="margin-top: 15px;">
+                        <h5>RAG Response:</h5>
+                        <p>{{ragResponse}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div class="row" ng-show="statusMessage">
+        <div class="col-md-12">
+            <div class="alert" ng-class="{'alert-success': statusType === 'success', 'alert-danger': statusType === 'error', 'alert-info': statusType === 'info'}">
+                <span class="glyphicon" ng-class="{'glyphicon-ok': statusType === 'success', 'glyphicon-exclamation-sign': statusType === 'error', 'glyphicon-info-sign': statusType === 'info'}"></span>
+                {{statusMessage}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="row" ng-show="loading">
+        <div class="col-md-12 text-center">
+            <div class="alert alert-info">
+                <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+                {{statusMessage || 'Loading...'}}
+            </div>
+        </div>
+    </div>
+</div>

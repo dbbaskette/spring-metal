@@ -22,6 +22,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,8 +44,8 @@ public class AiConfiguration {
 	}
 
 	@Bean
-	public MessageRetriever messageRetriever(VectorStore vectorStore, ChatModel chatModel) {
-		return new MessageRetriever(vectorStore, chatModel);
+	public MessageRetriever messageRetriever(VectorStore vectorStore, ChatClient chatClient) {
+		return new MessageRetriever(vectorStore, chatClient);
 	}
 
 	@Configuration

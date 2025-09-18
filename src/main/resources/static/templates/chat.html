@@ -1,0 +1,74 @@
+<div id="chat" ng-init="init()">
+    <!-- Navigation Bar -->
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #444;">
+                    <li class="breadcrumb-item"><a href="#/" style="color: #00d084;"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                    <li class="breadcrumb-item active" style="color: #fff;">💬 Chat</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <br>
+        <h1><span class="glyphicon glyphicon-comment" style="color: #00d084;"></span> Spring Metal AI Chat</h1>
+        <p class="text-muted">Chat with AI powered by <strong>Spring AI</strong> and <strong>MCP Integration</strong></p>
+    </div>
+
+    <!-- Chat Interface -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default" style="min-height: 600px;">
+                <div class="panel-heading">
+                    <h3 class="panel-title">🎸 Rock Your Conversation</h3>
+                </div>
+                <div class="panel-body" style="padding: 0; height: 550px;">
+                    <deep-chat
+                        style="height: 100%; width: 100%;"
+                        request='{
+                            "url": "/ai/chat",
+                            "method": "POST",
+                            "headers": {"Content-Type": "application/json"}
+                        }'
+                        textInput='{"placeholder": {"text": "Ask me about music, artists, or anything else..."}}'
+                        chatStyle='{
+                            "backgroundColor": "#2d2d2d",
+                            "border": "1px solid #444"
+                        }'
+                        messageStyles='{
+                            "default": {
+                                "shared": {
+                                    "bubble": {
+                                        "backgroundColor": "#1a1a1a",
+                                        "color": "#e0e0e0",
+                                        "border": "1px solid #555"
+                                    }
+                                },
+                                "user": {
+                                    "bubble": {
+                                        "backgroundColor": "#00d084",
+                                        "color": "#fff"
+                                    }
+                                },
+                                "ai": {
+                                    "bubble": {
+                                        "backgroundColor": "#333",
+                                        "color": "#e0e0e0"
+                                    }
+                                }
+                            }
+                        }'
+                        initialMessages='[
+                            {
+                                "role": "ai",
+                                "text": "🎸 Welcome to Spring Metal! I am powered by Spring AI with MCP tool integration. Ask me about music, artists, albums, or anything else you would like to know!"
+                            }
+                        ]'>
+                    </deep-chat>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

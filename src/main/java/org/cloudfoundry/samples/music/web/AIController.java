@@ -3,6 +3,7 @@ package org.cloudfoundry.samples.music.web;
 import java.util.*;
 
 import org.cloudfoundry.samples.music.config.ai.MessageRetriever;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.cloudfoundry.samples.music.domain.Album;
 import org.cloudfoundry.samples.music.domain.MessageRequest;
 import org.cloudfoundry.samples.music.domain.Message;
@@ -20,12 +21,15 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@Profile("llm")
+@Profile({"llm", "mcp"})
 public class AIController {
     private static final Logger logger = LoggerFactory.getLogger(AIController.class);
     private MessageRetriever messageRetriever;
     private VectorStore vectorStore;
     private EmbeddingModel embeddingModel;
+
+    @Autowired(required = false)
+    private ToolCallbackProvider toolCallbackProvider;
 
     public static String generateVectorDoc(Album album) {
             return "artist: " + album.getArtist() + "\n" +
@@ -52,6 +56,37 @@ public class AIController {
         String result = messageRetriever.retrieve(query);
 
         return Map.of("text",result);
+    }
+
+    @RequestMapping(value = "/ai/chat", method = RequestMethod.POST)
+    public Map<String,Object> chat(@RequestBody Map<String, Object> requestBody) {
+        try {
+            logger.info("Chat request received: {}", requestBody);
+
+            // Extract the message from the deep-chat format
+            String message;
+            if (requestBody.containsKey("text")) {
+                message = (String) requestBody.get("text");
+            } else if (requestBody.containsKey("message")) {
+                message = (String) requestBody.get("message");
+            } else {
+                message = requestBody.toString();
+            }
+
+            logger.info("Processing chat message: {}", message);
+
+            // Use the MessageRetriever to get AI response with RAG and MCP integration
+            String result = messageRetriever.retrieve(message);
+
+            logger.info("Chat response generated, length: {} characters", result.length());
+
+            // Return in the format expected by deep-chat
+            return Map.of("text", result);
+
+        } catch (Exception e) {
+            logger.error("Error processing chat request", e);
+            return Map.of("text", "I'm sorry, I encountered an error while processing your message: " + e.getMessage());
+        }
     }
 
     @RequestMapping(value = "/ai/addDoc", method = RequestMethod.POST)
@@ -164,6 +199,29 @@ public class AIController {
             return Map.of(
                 "status", "error",
                 "message", e.getMessage()
+            );
+        }
+    }
+
+    @RequestMapping(value = "/api/mcp/status", method = RequestMethod.GET)
+    public Map<String, Object> getMcpStatus() {
+        boolean mcpAvailable = toolCallbackProvider != null;
+
+        if (mcpAvailable) {
+            return Map.of(
+                "enabled", true,
+                "message", "MCP tools are available via Spring AI auto-configuration",
+                "toolCount", "Tools discovered automatically",
+                "servers", List.of("audiodb"),
+                "details", "AudioDB server configured in application.yml"
+            );
+        } else {
+            return Map.of(
+                "enabled", false,
+                "message", "MCP tools not available - check server connectivity",
+                "toolCount", 0,
+                "servers", Collections.emptyList(),
+                "details", "Ensure MCP server is running at http://localhost:8090/api/mcp"
             );
         }
     }

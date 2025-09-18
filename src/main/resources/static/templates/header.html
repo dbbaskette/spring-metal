@@ -2,7 +2,13 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" href="#">Tanzu AI's Boneyard <span class="glyphicon glyphicon-music"></span></a>
+                <a class="navbar-brand" href="#" style="font-family: 'Arial Black', Arial, sans-serif; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                    🎸 <span style="color: #00d084;">Spring</span> <span style="color: #ff6b35;">Metal</span>
+                    <span class="glyphicon glyphicon-music" style="color: #ffd700;"></span>
+                    <small style="display: block; font-size: 10px; color: #ccc; margin-top: -5px;">
+                        Powered by Spring AI • MCP Integration
+                    </small>
+                </a>
                 <ul class="navbar-nav">
                     <!--<li></li>-->
                 </ul>
@@ -10,6 +16,11 @@
 
             <ul class="nav navbar-nav navbar-right">
                 <li class=instance-num></li>
+                <li>
+                    <a href="#" ng-click="openBoneyardChat()" title="Chat with Boneyard Assistant" style="color: #00d084; padding: 15px;">
+                        <span class="glyphicon glyphicon-comment" style="font-size: 18px;"></span>
+                    </a>
+                </li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <span class="glyphicon glyphicon-info-sign icon-white"></span>
@@ -17,6 +28,8 @@
                     <ul class="dropdown-menu">
                         <li><a><strong>Profiles:</strong> {{info.profiles.join()}}</a></li>
                         <li><a><strong>Services:</strong> {{info.services.join()}}</a></li>
+                        <li class="divider" ng-if='info.profiles.includes("mcp")'></li>
+                        <li ng-if='info.profiles.includes("mcp")'><a href="#/mcp-settings"><span class="glyphicon glyphicon-link"></span> MCP Settings</a></li>
                     </ul>
                 </li>
             </ul>

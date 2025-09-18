@@ -1,10 +1,18 @@
-angular.module('SpringMusic', ['albums', 'errors', 'status', 'info', 'ngRoute', 'ui.directives']).
+angular.module('SpringMusic', ['albums', 'errors', 'status', 'info', 'mcp', 'ngRoute', 'ui.directives']).
     config(function ($locationProvider, $routeProvider) {
         // $locationProvider.html5Mode(true);
 
         $routeProvider.when('/errors', {
             controller: 'ErrorsController',
             templateUrl: 'templates/errors.html'
+        });
+        $routeProvider.when('/mcp-settings', {
+            controller: 'McpController',
+            templateUrl: 'templates/mcp-settings.html'
+        });
+        $routeProvider.when('/chat', {
+            controller: 'ChatController',
+            templateUrl: 'templates/chat.html'
         });
         $routeProvider.otherwise({
             controller: 'AlbumsController',

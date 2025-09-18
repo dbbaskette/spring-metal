@@ -1,21 +1,35 @@
+/* Spring Metal Theme - Hard Rock/Metal with Spring AI Integration */
+body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+    background-attachment: fixed;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 #body {
     padding-top: 10px;
+    min-height: 100vh;
 }
 
 .navbar {
-    background-color: white;
+    background: linear-gradient(135deg, #000 0%, #1a1a1a 50%, #000 100%);
     border: 0;
     margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
 }
 
 .navbar .container {
-    background-color: black;
+    background: linear-gradient(135deg, #000 0%, #333 50%, #000 100%);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 5px 15px;
 }
 
 .navbar .navbar-brand {
     color: white;
-    padding: 10px 15px;
-    font-size: 25px;
+    padding: 15px 15px;
+    font-size: 28px;
+    height: auto;
 }
 
 .nav .instance-num {
@@ -25,32 +39,177 @@
 }
 
 .navbar .navbar-brand:hover {
-    color: white;
+    color: #00d084;
+    text-shadow: 2px 2px 6px rgba(0,208,132,0.5);
 }
 
+/* Spring Metal Buttons */
 .btn {
-    background-color: white;
+    background: linear-gradient(135deg, #00d084 0%, #007d5a 100%);
+    color: white;
+    border: 1px solid #00a86b;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background: linear-gradient(135deg, #ff6b35 0%, #cc5529 100%);
+    border-color: #ff6b35;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #00d084 0%, #007d5a 100%);
+    border-color: #00a86b;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #666 0%, #333 100%);
+    border-color: #555;
 }
 
 .icon-white {
     color: white;
 }
 
+/* Panel Styling */
+.panel {
+    background: rgba(42, 42, 42, 0.9);
+    border: 1px solid #555;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.panel-heading {
+    background: linear-gradient(135deg, #333 0%, #555 100%);
+    border-bottom: 1px solid #666;
+    color: white;
+}
+
+.panel-body {
+    background: rgba(50, 50, 50, 0.8);
+    color: #e0e0e0;
+}
+
 .page-header {
-    font-size: 20px;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    border-bottom: 2px solid #00d084;
 }
 
 h1 {
-    font-size: 20px;
+    font-size: 28px;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+h2, h3, h4, h5, h6 {
+    color: #e0e0e0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
 a {
- color: black;;
+    color: #00d084;
+    transition: color 0.3s ease;
 }
 
+a:hover {
+    color: #ff6b35;
+    text-decoration: none;
+}
+
+/* Alert Styling */
 .alert-success {
-    background-color: white;
-    color: black;
-    border-color: black;
+    background: linear-gradient(135deg, rgba(0,208,132,0.15) 0%, rgba(0,125,90,0.15) 100%);
+    color: #fff;
+    border-color: #00a86b;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(42,42,42,0.9) 0%, rgba(30,30,30,0.9) 100%);
+    color: #fff;
+    border-color: #666;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(255,107,53,0.15) 0%, rgba(204,85,41,0.15) 100%);
+    color: #fff;
+    border-color: #cc5529;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Form Elements */
+.form-control {
+    background: rgba(42, 42, 42, 0.8);
+    border: 1px solid #555;
+    color: #e0e0e0;
+}
+
+.form-control:focus {
+    background: rgba(50, 50, 50, 0.9);
+    border-color: #00d084;
+    box-shadow: 0 0 8px rgba(0,208,132,0.3);
+}
+
+/* Breadcrumb Styling */
+.breadcrumb {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid #444;
+    margin-bottom: 20px;
+}
+
+.breadcrumb > li + li:before {
+    color: #888;
+}
+
+/* Album Grid Styling - Improved Contrast */
+.thumbnail {
+    background: rgba(42, 42, 42, 0.95);
+    border: 1px solid #555;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.thumbnail .caption {
+    background: rgba(30, 30, 30, 0.9);
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.thumbnail .caption h4,
+.thumbnail .caption h5 {
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    margin: 8px 0;
+}
+
+.thumbnail .caption h4 {
+    color: #00d084;
+    font-weight: bold;
+}
+
+/* Table Styling for List View */
+.table {
+    color: #e0e0e0;
+    background: rgba(42, 42, 42, 0.8);
+}
+
+.table th {
+    color: #fff;
+    background: rgba(30, 30, 30, 0.9);
+    border-bottom: 2px solid #00d084;
+}
+
+.table td {
+    color: #e0e0e0;
+    border-top: 1px solid #555;
+}
+
+.table-striped > tbody > tr:nth-child(odd) > td {
+    background-color: rgba(50, 50, 50, 0.3);
 }
 

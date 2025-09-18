@@ -26,6 +26,7 @@ import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 
@@ -45,10 +46,10 @@ public class MessageRetriever {
 	private ChatClient chatClient;
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageRetriever.class);
-	
-	public MessageRetriever(VectorStore vectorStore, ChatModel chatModel) {
+
+	public MessageRetriever(VectorStore vectorStore, ChatClient chatClient) {
 		this.vectorStore = vectorStore;
-		this.chatClient = ChatClient.builder(chatModel).build();
+		this.chatClient = chatClient;
 	}
 
 
@@ -66,6 +67,8 @@ public class MessageRetriever {
 
 			logger.info("Created QuestionAnswerAdvisor with similarity threshold 0.3 and topK 5");
 
+			// Use the auto-configured ChatClient (already includes MCP tools if available)
+			logger.info("Using auto-configured ChatClient with MCP tool integration");
 			String response = this.chatClient
 				.prompt()
 				.advisors(qaAdvisor)
@@ -105,4 +108,5 @@ public class MessageRetriever {
 		return systemMessage;
 
 	}
+
 }

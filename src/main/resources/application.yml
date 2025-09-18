@@ -1,6 +1,9 @@
+server:
+  port: 8080
+
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local,llm}
+    active: ${SPRING_PROFILES_ACTIVE:local,llm,mcp}
   jpa:
     generate-ddl: true
   http:
@@ -109,4 +112,30 @@ logging:
     org.springframework.ai: DEBUG
     org.springframework.ai.openai: TRACE
     org.springframework.ai.vectorstore: DEBUG
+    org.springframework.ai.mcp: DEBUG
+    io.modelcontextprotocol: DEBUG
+    org.springframework.ai.tool: DEBUG
+    org.springframework.ai.autoconfigure.mcp: DEBUG
+    org.springframework.ai.mcp.client: TRACE
+    org.springframework.ai.mcp.client.transport: TRACE
     org.springframework.web.client: DEBUG
+
+---
+# MCP Profile - for Model Context Protocol integration
+spring:
+  config:
+    activate:
+      on-profile: mcp
+  ai:
+    mcp:
+      client:
+        enabled: true
+        name: spring-metal-mcp-client
+        type: SYNC
+        toolcallback:
+          enabled: true
+        streamable-http:
+          connections:
+            audiodb:
+              url: "http://localhost:8090"
+              endpoint: "/api/mcp"
