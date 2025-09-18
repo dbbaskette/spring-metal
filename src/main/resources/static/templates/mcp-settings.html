@@ -75,28 +75,63 @@
 
                             <!-- Server List -->
                             <div ng-show="configuredServers.length > 0">
-                                <div ng-repeat="server in configuredServers" class="well" style="margin: 10px 0;">
+                                <div ng-repeat="server in configuredServers track by server.id" class="well" style="margin: 10px 0;">
                                     <div class="row">
-                                        <div class="col-md-10">
+                                        <div class="col-md-9">
                                             <h5 style="margin-top: 0;">
                                                 <strong>{{server.name}}</strong>
-                                                <span ng-if="mcpStatus.servers.indexOf(server.name) >= 0" class="label label-success" style="margin-left: 10px;">
+                                                <span ng-if="server.enabled && server.status === 'ACTIVE'" class="label label-success" style="margin-left: 10px;">
                                                     <span class="glyphicon glyphicon-ok"></span> Active
                                                 </span>
-                                                <span ng-if="mcpStatus.servers.indexOf(server.name) < 0" class="label label-warning" style="margin-left: 10px;">
-                                                    <span class="glyphicon glyphicon-time"></span> Configured
+                                                <span ng-if="!server.enabled" class="label label-default" style="margin-left: 10px;">
+                                                    <span class="glyphicon glyphicon-pause"></span> Disabled
+                                                </span>
+                                                <span ng-if="server.status === 'ERROR'" class="label label-danger" style="margin-left: 10px;">
+                                                    <span class="glyphicon glyphicon-alert"></span> Error
+                                                </span>
+                                                <span ng-if="server.status === 'NEW'" class="label label-warning" style="margin-left: 10px;">
+                                                    <span class="glyphicon glyphicon-time"></span> Pending
                                                 </span>
                                             </h5>
-                                            <p class="text-muted" style="margin: 5px 0;">{{server.description || 'No description provided'}}</p>
-                                            <small class="text-muted">
-                                                <strong>URL:</strong> {{server.url}}<br>
-                                                <strong>Endpoint:</strong> {{server.endpoint}}
-                                            </small>
+                                            <p style="margin-bottom: 5px;">
+                                                <strong>Base URL:</strong> {{server.baseUrl}}
+                                            </p>
+                                            <p style="margin-bottom: 5px;">
+                                                <strong>Endpoint:</strong> {{server.displayEndpoint}}
+                                            </p>
+                                            <p ng-if="server.enabled && server.status === 'ACTIVE' && server.toolCount > 0" style="margin-bottom: 5px;">
+                                                <span class="glyphicon glyphicon-wrench" style="color: #00d084;"></span>
+                                                <strong>Tools:</strong> {{server.toolCount}} available
+                                                <span ng-if="server.simplifiedTools" class="text-muted">
+                                                    <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{server.simplifiedTools}}
+                                                </span>
+                                            </p>
+                                            <p ng-if="server.enabled && server.status === 'ACTIVE' && server.toolCount === 0" class="text-muted" style="margin-bottom: 5px;">
+                                                <span class="glyphicon glyphicon-info-sign"></span> No tools available from this server
+                                            </p>
+                                            <p ng-if="server.lastSuccessfulAt" class="text-muted" style="margin-bottom: 5px;">
+                                                <span class="glyphicon glyphicon-time"></span> Last success: {{server.lastSuccessfulAt | date:'medium'}}
+                                            </p>
+                                            <p ng-if="server.lastFailureAt" class="text-muted" style="margin-bottom: 5px;">
+                                                <span class="glyphicon glyphicon-time"></span> Last failure: {{server.lastFailureAt | date:'medium'}}
+                                            </p>
+                                            <p ng-if="server.lastErrorMessage" class="text-danger" style="margin-bottom: 5px;">
+                                                <span class="glyphicon glyphicon-exclamation-sign"></span> {{server.lastErrorMessage}}
+                                            </p>
                                         </div>
-                                        <div class="col-md-2 text-right">
-                                            <button class="btn btn-danger btn-sm" ng-click="removeServer(server.name)">
-                                                <span class="glyphicon glyphicon-trash"></span>
-                                            </button>
+                                        <div class="col-md-3 text-right" style="margin-top: 5px;">
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Server actions">
+                                                <button class="btn btn-info" ng-click="testServer(server)" ng-disabled="loading">
+                                                    <span class="glyphicon glyphicon-signal"></span> Test
+                                                </button>
+                                                <button class="btn btn-warning" ng-click="toggleServer(server)" ng-disabled="loading">
+                                                    <span class="glyphicon" ng-class="{'glyphicon-pause': server.enabled, 'glyphicon-play': !server.enabled}"></span>
+                                                    {{server.enabled ? 'Disable' : 'Enable'}}
+                                                </button>
+                                                <button class="btn btn-danger" ng-click="deleteServer(server)" ng-disabled="loading">
+                                                    <span class="glyphicon glyphicon-trash"></span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -104,42 +139,18 @@
 
                             <div ng-show="configuredServers.length === 0" class="alert alert-info">
                                 <span class="glyphicon glyphicon-info-sign"></span>
-                                No MCP servers configured. Add your first server using the form on the right.
+                                No MCP servers registered yet. Use the form on the right to add one.
                             </div>
 
                             <div class="alert alert-info" style="margin-top: 15px;">
                                 <span class="glyphicon glyphicon-info-sign"></span>
-                                <strong>How it works:</strong> Add MCP servers to provide additional tools that the AI can use to answer your questions.
-                                The LLM will automatically discover and use available tools based on your queries.
-                            </div>
-
-                            <div class="alert alert-info" style="margin-top: 10px; background-color: #e8f4f8; border-color: #1b809e;">
-                                <span class="glyphicon glyphicon-info-sign" style="color: #1b809e;"></span>
-                                <strong style="color: #1b809e;">Spring AI 1.1.0-M1 Behavior:</strong>
-                                <div style="margin-top: 8px; color: #31708f;">
-                                    • <strong>UI Server Addition:</strong> Servers added here are saved but require <strong>application restart</strong> for tool discovery<br>
-                                    • <strong>Immediate Availability:</strong> Configure servers in <code>application.yml</code> before startup<br>
-                                    • <strong>Future Versions:</strong> Dynamic server addition without restart will be available in newer Spring AI releases
-                                </div>
-                            </div>
-
-                            <div class="alert alert-success" style="margin-top: 10px;">
-                                <span class="glyphicon glyphicon-book"></span>
-                                <strong>Configuration Guide:</strong> Add to <code>src/main/resources/application.yml</code>:
-                                <pre style="margin-top: 8px; background-color: #f8f8f8; padding: 8px; border-radius: 4px; font-size: 12px;">spring:
-  ai:
-    mcp:
-      client:
-        streamable-http:
-          connections:
-            audiodb:
-              uri: "http://localhost:8090/api/mcp"</pre>
+                                <strong>How it works:</strong> Servers added here are saved immediately and Spring AI connects to them at runtime. Active tools appear without restarting the application.
                             </div>
                         </div>
 
                         <div class="col-md-4">
                             <h4 style="color: #333; margin-top: 0;">➕ Add New Server</h4>
-                            <form ng-submit="addServer()">
+                            <form ng-submit="addServer($event)">
                                 <div class="form-group">
                                     <label for="serverName">Name</label>
                                     <input type="text" class="form-control" id="serverName" ng-model="newServer.name" placeholder="e.g., AudioDB" required>
@@ -153,13 +164,21 @@
                                     <input type="text" class="form-control" id="serverEndpoint" ng-model="newServer.endpoint" placeholder="e.g., /api/mcp" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="serverDescription">Description</label>
-                                    <textarea class="form-control" id="serverDescription" ng-model="newServer.description" placeholder="Optional description" rows="2"></textarea>
+                                    <label for="serverHeaders">Headers (optional JSON)</label>
+                                    <textarea class="form-control" id="serverHeaders" ng-model="newServer.headers" placeholder='{"Authorization": "Bearer token"}' rows="3"></textarea>
+                                </div>
+                                <div class="btn-group btn-group-justified" style="margin-bottom: 10px;">
+                                    <a class="btn btn-info" ng-click="testNewServer()" ng-disabled="loading">
+                                        <span class="glyphicon glyphicon-flash"></span> Test Connection
+                                    </a>
                                 </div>
                                 <button type="submit" class="btn btn-success btn-block" ng-disabled="loading">
                                     <span class="glyphicon glyphicon-plus"></span> Add Server
                                 </button>
                             </form>
+                            <p class="text-muted" style="margin-top: 10px; font-size: 12px;">
+                                Connections are stored immediately. Use the actions above to test, disable, or remove servers as needed.
+                            </p>
                         </div>
                     </div>
                 </div>

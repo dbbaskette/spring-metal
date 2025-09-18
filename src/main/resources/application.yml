@@ -131,11 +131,8 @@ spring:
       client:
         enabled: true
         name: spring-metal-mcp-client
-        type: SYNC
+        type: ASYNC
         toolcallback:
-          enabled: true
+          enabled: false
         streamable-http:
-          connections:
-            audiodb:
-              url: "http://localhost:8090"
-              endpoint: "/api/mcp"
+          initialized: false
