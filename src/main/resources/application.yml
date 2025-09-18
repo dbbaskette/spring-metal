@@ -63,13 +63,15 @@ spring:
     activate:
       on-profile: cloud
   ai:
+    openai:
+      api-key: dummy-key-not-used
     vectorstore:
       pgvector:
         initialize-schema: true
         remove-existing-vector-store-table: false
         index-type: HNSW
         distance-type: COSINE_DISTANCE
-        dimensions: 1536
+        dimensions: 768
 
 ---
 # HTTP2 Profile

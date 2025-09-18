@@ -44,15 +44,19 @@ public class AIController {
     }
 
     @Autowired
-    public AIController(VectorStore vectorStore, MessageRetriever messageRetriever, EmbeddingModel embeddingModel, ObjectProvider<McpServerConnectionService> connectionServiceProvider) {
-        this.messageRetriever = messageRetriever;
-        this.vectorStore = vectorStore;
-        this.embeddingModel = embeddingModel;
+    public AIController(ObjectProvider<VectorStore> vectorStoreProvider, ObjectProvider<MessageRetriever> messageRetrieverProvider, ObjectProvider<EmbeddingModel> embeddingModelProvider, ObjectProvider<McpServerConnectionService> connectionServiceProvider) {
+        this.messageRetriever = messageRetrieverProvider.getIfAvailable();
+        this.vectorStore = vectorStoreProvider.getIfAvailable();
+        this.embeddingModel = embeddingModelProvider.getIfAvailable();
         this.connectionService = connectionServiceProvider.getIfAvailable();
     }
     
     @RequestMapping(value = "/ai/rag", method = RequestMethod.POST)
     public Map<String,Object> generate(@RequestBody MessageRequest messageRequest) {
+        if (messageRetriever == null) {
+            return Map.of("text", "AI features are not available - MessageRetriever not configured");
+        }
+
         Message[] messages = messageRequest.getMessages();
         logger.info("Getting Messages " + messages);
 
@@ -65,6 +69,10 @@ public class AIController {
     @RequestMapping(value = "/ai/chat", method = RequestMethod.POST)
     public Map<String,Object> chat(@RequestBody Map<String, Object> requestBody) {
         try {
+            if (messageRetriever == null) {
+                return Map.of("text", "AI chat features are not available - AI components not configured");
+            }
+
             logger.info("🔄 CHAT REQUEST RECEIVED");
             logger.info("Request keys: {}", requestBody.keySet());
             logger.debug("Full chat request body: {}", requestBody);
@@ -128,6 +136,9 @@ public class AIController {
 
     @RequestMapping(value = "/ai/addDoc", method = RequestMethod.POST)
     public String addDoc(@RequestBody Album album) {
+        if (vectorStore == null) {
+            return "Vector store not available - AI features not configured";
+        }
         String text = generateVectorDoc(album);
         Document doc = new Document(album.getId(), text, new HashMap<>());
         logger.info("Adding Album " + doc.toString());
@@ -137,6 +148,9 @@ public class AIController {
 
     @RequestMapping(value = "/ai/deleteDoc", method = RequestMethod.POST)
     public String deleteDoc(@RequestBody String id) {
+        if (vectorStore == null) {
+            return "Vector store not available - AI features not configured";
+        }
         logger.info("Deleting Album " + id);
         this.vectorStore.delete(List.of(id));
         return id;
@@ -145,6 +159,13 @@ public class AIController {
     @RequestMapping(value = "/ai/test-embedding", method = RequestMethod.GET)
     public Map<String, Object> testEmbedding() {
         try {
+            if (embeddingModel == null) {
+                return Map.of(
+                    "status", "error",
+                    "message", "Embedding model not available - AI features not configured"
+                );
+            }
+
             logger.info("Testing embedding service connectivity directly...");
 
             // Test direct embedding operation (bypassing vector store)
@@ -181,6 +202,13 @@ public class AIController {
     @RequestMapping(value = "/ai/test-search", method = RequestMethod.GET)
     public Map<String, Object> testVectorSearch() {
         try {
+            if (vectorStore == null) {
+                return Map.of(
+                    "status", "error",
+                    "message", "Vector store not available - AI features not configured"
+                );
+            }
+
             logger.info("Testing vector store search...");
 
             // Test similarity search
@@ -210,6 +238,13 @@ public class AIController {
     @RequestMapping(value = "/ai/populate", method = RequestMethod.POST)
     public Map<String, Object> populateVectorStore() {
         try {
+            if (vectorStore == null) {
+                return Map.of(
+                    "status", "error",
+                    "message", "Vector store not available - AI features not configured"
+                );
+            }
+
             logger.info("Manual vector store population requested");
 
             // Add a test document to verify the vector store is working
