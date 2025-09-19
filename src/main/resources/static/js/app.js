@@ -10,10 +10,6 @@ angular.module('SpringMusic', ['albums', 'errors', 'status', 'info', 'mcp', 'ngR
             controller: 'McpController',
             templateUrl: 'templates/mcp-settings.html'
         });
-        $routeProvider.when('/chat', {
-            controller: 'ChatController',
-            templateUrl: 'templates/chat.html'
-        });
         $routeProvider.otherwise({
             controller: 'AlbumsController',
             templateUrl: 'templates/albums.html'

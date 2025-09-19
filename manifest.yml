@@ -1,12 +1,12 @@
 ---
 applications:
 - name: spring-metal
-  path: ./target/spring-metal-0.6.0.jar
+  path: ./target/spring-metal-1.3.0.jar
   buildpack: java_buildpack_offline
   random-route: true
   env:
-    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
-    SPRING_PROFILES_ACTIVE: cloud,llm
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+    SPRING_PROFILES_ACTIVE: cloud,llm,mcp
 
   services:
     - boneyard-genai

@@ -24,8 +24,10 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -39,25 +41,30 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class AiConfiguration {
 
 	@Bean
+	@ConditionalOnMissingBean
 	public VectorStoreInitializer vectorStoreInitializer(VectorStore vectorStore) {
 		return new VectorStoreInitializer(vectorStore);
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public MessageRetriever messageRetriever(VectorStore vectorStore, ChatClient chatClient) {
 		return new MessageRetriever(vectorStore, chatClient);
 	}
 
 	@Configuration
 	@Profile("cloud")
+	@ConditionalOnClass(GenaiLocator.class)
 	public static class CloudAiConfiguration {
 
 		@Bean
+		@Primary
 		public ChatModel chatModel(GenaiLocator genaiLocator) {
 			return genaiLocator.getFirstAvailableChatModel();
 		}
 
 		@Bean
+		@Primary
 		public EmbeddingModel embeddingModel(GenaiLocator genaiLocator) {
 			return genaiLocator.getFirstAvailableEmbeddingModel();
 		}

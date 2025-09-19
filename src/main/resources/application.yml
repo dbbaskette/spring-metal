@@ -41,7 +41,8 @@ spring:
       chat:
         options:
           model: qwen/qwen3-4b-2507
-          temperature: 0.7
+          temperature: 0.2
+          top-p: 1.0
       embedding:
         options:
           model: text-embedding-nomic-embed-text-v2
@@ -63,13 +64,19 @@ spring:
     activate:
       on-profile: cloud
   ai:
+    openai:
+      api-key: dummy-key-not-used
+      chat:
+        options:
+          temperature: 0.2
+          top-p: 1.0
     vectorstore:
       pgvector:
         initialize-schema: true
         remove-existing-vector-store-table: false
         index-type: HNSW
         distance-type: COSINE_DISTANCE
-        dimensions: 1536
+        dimensions: 768
 
 ---
 # HTTP2 Profile
@@ -131,11 +138,9 @@ spring:
       client:
         enabled: true
         name: spring-metal-mcp-client
-        type: SYNC
+        type: ASYNC
         toolcallback:
-          enabled: true
+          enabled: false
         streamable-http:
-          connections:
-            audiodb:
-              url: "http://localhost:8090"
-              endpoint: "/api/mcp"
+          initialized: true
+        request-timeout: 30s

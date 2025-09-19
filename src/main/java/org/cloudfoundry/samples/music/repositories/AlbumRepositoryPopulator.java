@@ -29,9 +29,15 @@ public class AlbumRepositoryPopulator implements ApplicationListener<Application
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        var repositories = BeanFactoryUtils.beansOfTypeIncludingAncestors(event.getApplicationContext(),
+                CrudRepository.class);
+
         @SuppressWarnings("rawtypes")
-        CrudRepository albumRepository =
-                BeanFactoryUtils.beanOfTypeIncludingAncestors(event.getApplicationContext(), CrudRepository.class);
+        CrudRepository albumRepository = repositories.entrySet().stream()
+                .filter(entry -> entry.getKey().toLowerCase().contains("album"))
+                .map(java.util.Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
 
         if (albumRepository != null && albumRepository.count() == 0) {
             populate(albumRepository);

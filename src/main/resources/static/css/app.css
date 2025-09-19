@@ -87,6 +87,12 @@ body {
     color: white;
 }
 
+.panel-heading .panel-title {
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
 .panel-body {
     background: rgba(50, 50, 50, 0.8);
     color: #e0e0e0;
