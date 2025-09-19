@@ -41,7 +41,8 @@ spring:
       chat:
         options:
           model: qwen/qwen3-4b-2507
-          temperature: 0.7
+          temperature: 0.2
+          top-p: 1.0
       embedding:
         options:
           model: text-embedding-nomic-embed-text-v2
@@ -65,6 +66,10 @@ spring:
   ai:
     openai:
       api-key: dummy-key-not-used
+      chat:
+        options:
+          temperature: 0.2
+          top-p: 1.0
     vectorstore:
       pgvector:
         initialize-schema: true
