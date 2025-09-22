@@ -24,12 +24,17 @@ public class ChatConfiguration {
 
     private ToolCallbackProvider toolCallbackProvider;
 
+    public ChatConfiguration() {
+        log.info("🏗️  ChatConfiguration constructor called - bean is being created");
+    }
+
     /**
      * ChatClient with MCP tool support using Spring AI 1.1.0 auto-configuration
      */
     @Bean
     @Primary
     public ChatClient chatClient(ChatClient.Builder chatClientBuilder, @Autowired(required = false) ToolCallbackProvider tools) {
+        log.info("🚀 ChatClient bean method called! Creating ChatClient with tools...");
         log.info("🔧 Configuring MCP-enabled ChatClient with Spring AI 1.1.0");
         log.info("🛠️  ToolCallbackProvider available: {}", tools != null);
 
@@ -47,8 +52,32 @@ public class ChatConfiguration {
             log.warn("⚠️  No MCP tools available - running without tool integration");
         }
 
-        return chatClientBuilder
-            .build();
+        var chatClientBuilderWithTools = chatClientBuilder;
+
+        if (tools != null) {
+            try {
+                var toolCallbacks = tools.getToolCallbacks();
+                chatClientBuilderWithTools = chatClientBuilder.defaultToolCallbacks(toolCallbacks);
+                log.info("🔧 Registered {} tool callbacks with ChatClient", toolCallbacks.length);
+
+                // Log each tool for debugging
+                for (int i = 0; i < toolCallbacks.length; i++) {
+                    try {
+                        var tool = toolCallbacks[i];
+                        String toolName = tool.getToolDefinition() != null ? tool.getToolDefinition().name() : "unknown";
+                        String toolDescription = tool.getToolDefinition() != null ? tool.getToolDefinition().description() : "no description";
+                        log.info("🛠️  Tool [{}]: {} - {}", i + 1, toolName,
+                                toolDescription.length() > 100 ? toolDescription.substring(0, 100) + "..." : toolDescription);
+                    } catch (Exception e) {
+                        log.warn("Could not inspect tool {}: {}", i + 1, e.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to register tools with ChatClient: {}", e.getMessage());
+            }
+        }
+
+        return chatClientBuilderWithTools.build();
     }
 
     /**

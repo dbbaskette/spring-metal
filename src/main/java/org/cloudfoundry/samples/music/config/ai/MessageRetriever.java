@@ -67,35 +67,32 @@ public class MessageRetriever {
 	}
 
 	public String retrieve(String message, List<Message> conversationHistory) {
-		logger.info("🔥 ===== RAG PIPELINE DEBUG START =====");
-		logger.info("🔥 STEP 1 - INITIAL REQUEST");
-		logger.info("🔥 Original Query: '{}'", message);
-		logger.info("🔥 Conversation History: {} messages", conversationHistory.size());
-
+		logger.info("🔥 ===== RAG PIPELINE START =====");
+		logger.info("🔥 Query: '{}'", message);
 		if (!conversationHistory.isEmpty()) {
-			logger.info("🔥 CONVERSATION CONTEXT:");
-			for (int i = 0; i < conversationHistory.size(); i++) {
-				Message msg = conversationHistory.get(i);
-				String role = msg instanceof UserMessage ? "USER" : "ASSISTANT";
-				String content = msg.getText();
-				logger.info("🔥   [{}] {}: {}", i + 1, role,
-					content.length() > 100 ? content.substring(0, 100) + "..." : content);
-			}
+			logger.info("🔥 Context: {} messages", conversationHistory.size());
 		}
 
 		try {
-			// Step 2: Query Rewriting - Improve query for better vector search while preserving entity names
+			// Step 2: Query Rewriting
 			logger.info("🔥 STEP 2 - QUERY REWRITING");
 
-			// Simplified prompt template with structured labels for better tool calling
+			// Enhanced prompt template for better tool calling
 			String customPromptText = """
 				Rewrite this query for better {target} search and tool selection.
 
 				RULES:
-				- Use labels: artist: "name", album: "name", track: "name"
-				- Fix obvious spelling errors
-				- Keep it concise
-				- NO explanations or reasoning
+				- Preserve the intent and meaning of the question (e.g., "who is in" means band members, "what albums" means discography)
+				- Add context words that help with search (e.g., "band members", "discography", "biography")
+				- Fix obvious spelling errors (e.g., "nirvanas" -> "Nirvana")
+				- Make the query clear and specific for tool calling
+				- Keep the natural question format if it's a question
+				- NO explanations, just the rewritten query
+
+				Examples:
+				"list nirvanas albums" -> "What albums are by Nirvana?"
+				"who is in metallica" -> "Who are the band members of Metallica?"
+				"songs on nevermind" -> "What tracks are on the album Nevermind by Nirvana?"
 
 				Query: {query}
 
@@ -112,13 +109,15 @@ public class MessageRetriever {
 
 			Query originalQuery = new Query(message);
 			Query rewrittenQuery = queryTransformer.transform(originalQuery);
-			String optimizedQuery = rewrittenQuery.text().trim();
+			String rawOptimizedQuery = rewrittenQuery.text().trim();
 
-			logger.info("🔥 Original Query: '{}'", message);
-			logger.info("🔥 Rewritten Query: '{}'", optimizedQuery);
+			// Clean any think tags from the rewritten query
+			String optimizedQuery = cleanThinkTags(rawOptimizedQuery);
 
-			// Step 3: Vector Store Search - Let's see what documents are retrieved
-			logger.info("🔥 STEP 3 - VECTOR STORE SEARCH");
+			logger.info("🔥 Rewritten: '{}'", optimizedQuery);
+
+			// Step 3: Vector Store Search
+			logger.info("🔥 STEP 3 - VECTOR SEARCH");
 			SearchRequest searchRequest = SearchRequest.builder()
 				.query(optimizedQuery)
 				.similarityThreshold(0.3d)
@@ -126,17 +125,15 @@ public class MessageRetriever {
 				.build();
 
 			List<Document> retrievedDocs = this.vectorStore.similaritySearch(searchRequest);
-			logger.info("🔥 Retrieved {} documents from vector store", retrievedDocs.size());
+			logger.info("🔥 Retrieved {} documents", retrievedDocs.size());
 
-			for (int i = 0; i < retrievedDocs.size(); i++) {
-				Document doc = retrievedDocs.get(i);
-				logger.info("🔥   Document [{}]: Score={}, Content Preview: {}",
-					i + 1,
-					doc.getMetadata().get("distance"),
-					doc.getFormattedContent().length() > 150 ? doc.getFormattedContent().substring(0, 150) + "..." : doc.getFormattedContent());
-			}
+			// Step 4: Setup tools for LLM
+			logger.info("🔥 STEP 4 - TOOL SETUP");
+			ToolCallback[] toolCallbacks = toolCallbackProvider != null ? toolCallbackProvider.getToolCallbacks()
+				: new ToolCallback[0];
+			logger.info("🔧 Available tools: {}", toolCallbacks.length);
 
-			// Create QuestionAnswerAdvisor with updated system prompt template that enforces tool usage
+			// Create QuestionAnswerAdvisor
 			PromptTemplate customPromptTemplate = PromptTemplate.builder()
 				.resource(systemPrompt)
 				.build();
@@ -149,22 +146,8 @@ public class MessageRetriever {
 				.promptTemplate(customPromptTemplate)
 				.build();
 
-			// Log the custom template being used for debugging
-			logger.info("🔥 SYSTEM PROMPT TEMPLATE: Using updated system-qa.st with mandatory tool usage rules");
-
-			logger.info("🔥 STEP 3 - TOOL CALLBACKS SETUP");
-			ToolCallback[] toolCallbacks = toolCallbackProvider != null ? toolCallbackProvider.getToolCallbacks()
-				: new ToolCallback[0];
-
-			logger.info("🔥 Available MCP Tools: {} tools", toolCallbacks.length);
-			for (int i = 0; i < toolCallbacks.length; i++) {
-				ToolCallback tool = toolCallbacks[i];
-				String toolInfo = tool.toString();
-				logger.info("🔥   Tool [{}]: {}", i + 1,
-					toolInfo.length() > 200 ? toolInfo.substring(0, 200) + "..." : toolInfo);
-			}
-
-			logger.info("🔥 STEP 4 - BUILDING CHAT PROMPT");
+			// Step 5: Build prompt and let LLM call tools
+			logger.info("🔥 STEP 5 - BUILDING PROMPT WITH TOOLS");
 			var promptSpec = this.chatClient
 				.prompt()
 				.advisors(qaAdvisor);
@@ -172,64 +155,53 @@ public class MessageRetriever {
 			// Add conversation history messages first
 			if (!conversationHistory.isEmpty()) {
 				promptSpec = promptSpec.messages(conversationHistory);
-				logger.info("🔥 Added {} conversation history messages to prompt", conversationHistory.size());
 			}
 
 			// Then add the current user message (using optimized query for better tool decisions)
 			promptSpec = promptSpec.user(optimizedQuery);
-			logger.info("🔥 Added user message (optimized): '{}'", optimizedQuery);
 
-			if (toolCallbacks.length > 0) {
-				promptSpec = promptSpec.toolCallbacks(toolCallbacks);
-				logger.info("🔥 Added {} tool callbacks to prompt", toolCallbacks.length);
+			logger.info("🔥 STEP 6 - EXECUTING CHAT CALL");
+
+			// Debug: Check if tools are actually available in the ChatClient
+			try {
+				logger.info("🔍 ChatClient debug info:");
+				logger.info("🔍 ChatClient class: {}", this.chatClient.getClass().getSimpleName());
+
+				// Check if we can get tool info from the prompt spec
+				var chatRequestBuilder = promptSpec.call();
+				logger.info("🔍 Chat request built successfully");
+
+			} catch (Exception e) {
+				logger.warn("🔍 Could not debug ChatClient: {}", e.getMessage());
 			}
 
-			logger.info("🔥 STEP 5 - EXECUTING CHAT CALL");
-			logger.info("🔥 About to call ChatClient with:");
-			logger.info("🔥   - Original Query: '{}'", message);
-			logger.info("🔥   - Optimized Query: '{}'", optimizedQuery);
-			logger.info("🔥   - {} retrieved documents", retrievedDocs.size());
-			logger.info("🔥   - {} conversation history messages", conversationHistory.size());
-			logger.info("🔥   - {} available tools", toolCallbacks.length);
+			// Execute the call and capture the full response for debugging
+			var chatResponse = promptSpec.call();
+			String response = chatResponse.content();
 
-			// Debug tool callback resolution for this specific call
-			if (toolCallbacks.length > 0) {
-				logger.info("🔥 TOOL CALLBACK DETAILS:");
-				for (int i = 0; i < toolCallbacks.length; i++) {
-					ToolCallback tool = toolCallbacks[i];
-					String toolName = tool.getToolDefinition() != null ? tool.getToolDefinition().name() : "unknown";
-					logger.info("🔥   Tool [{}]: Name='{}', Class='{}'",
-						i + 1,
-						toolName,
-						tool.getClass().getSimpleName());
+			// Debug: Log the raw response to understand what's happening
+			logger.info("🔍 Raw LLM response: '{}'", response != null ? response.substring(0, Math.min(response.length(), 500)) : "null");
+
+			// Debug: Check if there were any tool calls attempted
+			try {
+				var result = chatResponse.chatResponse();
+				if (result != null && result.getResults() != null && !result.getResults().isEmpty()) {
+					var generation = result.getResults().get(0);
+					logger.info("🔍 Generation metadata: {}", generation.getMetadata());
+
+					// Check for tool calls in the generation
+					if (generation.getMetadata() != null && generation.getMetadata().containsKey("finish-reason")) {
+						Object finishReason = generation.getMetadata().get("finish-reason");
+						logger.info("🔍 Finish reason: {}", String.valueOf(finishReason));
+					}
 				}
+			} catch (Exception e) {
+				logger.warn("🔍 Could not inspect chat response: {}", e.getMessage());
 			}
-
-			// Debug conversation history impact on tool calling
-			logger.info("🔥 CONVERSATION HISTORY IMPACT ON TOOLS:");
-			logger.info("🔥   - Has conversation history: {}", !conversationHistory.isEmpty());
-			if (!conversationHistory.isEmpty()) {
-				logger.info("🔥   - Last message was from: {}",
-					conversationHistory.get(conversationHistory.size() - 1) instanceof UserMessage ? "USER" : "ASSISTANT");
-			}
-
-			String response = promptSpec
-				.call()
-				.content();
-
-			logger.info("🔥 STEP 6 - CHAT RESPONSE RECEIVED");
-			logger.info("🔥 Response length: {} characters", response != null ? response.length() : 0);
-			logger.info("🔥 Response preview: {}",
-				response != null && response.length() > 200 ? response.substring(0, 200) + "..." : response);
 
 			String cleanedResponse = cleanThinkTags(response);
-
-			logger.info("🔥 STEP 7 - CLEANED RESPONSE");
-			logger.info("🔥 Cleaned response length: {} characters", cleanedResponse != null ? cleanedResponse.length() : 0);
-			logger.info("🔥 Cleaned response preview: {}",
-				cleanedResponse != null && cleanedResponse.length() > 200 ? cleanedResponse.substring(0, 200) + "..." : cleanedResponse);
-
-			logger.info("🔥 ===== RAG PIPELINE DEBUG END =====");
+			logger.info("🔥 RESPONSE: {} chars", cleanedResponse != null ? cleanedResponse.length() : 0);
+			logger.info("🔥 ===== RAG PIPELINE END =====");
 			return cleanedResponse;
 
 		} catch (Exception e) {
@@ -268,6 +240,7 @@ public class MessageRetriever {
 
 		return cleaned;
 	}
+
 
 
 }
