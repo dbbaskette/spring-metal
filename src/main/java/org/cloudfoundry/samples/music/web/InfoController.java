@@ -45,7 +45,18 @@ public class InfoController {
     @RequestMapping(value = "/appinfo")
     public ApplicationInfo info() {
         String instance = System.getenv("CF_INSTANCE_INDEX");
-        return new ApplicationInfo(springEnvironment.getActiveProfiles(), getServiceNames(), instance);
+        boolean llmEnabled = isLlmEnabled();
+        return new ApplicationInfo(springEnvironment.getActiveProfiles(), getServiceNames(), instance, llmEnabled);
+    }
+
+    private boolean isLlmEnabled() {
+        // Check if the 'llm' profile is active
+        for (String profile : springEnvironment.getActiveProfiles()) {
+            if ("llm".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 //     <stuart.charlton@broadcom.com>: This probably shouldn't be exposed.

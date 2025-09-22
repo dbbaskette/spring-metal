@@ -109,12 +109,65 @@ vector store: PostgreSQL + pgvector (local dims 768, cloud dims 1536)
 
 ## 🛠 MCP Runtime Settings
 
+### Manual Configuration
 - Use `POST /api/mcp/connections/test` to verify a Streamable HTTP endpoint before saving it.
 - Manage servers visually at `/#/mcp-settings`—the UI calls the same APIs to test, enable/disable, and delete connections.
 - Register a server with `POST /api/mcp/connections` (payload: `{ "name": "audiodb", "baseUrl": "http://localhost:8090", "endpoint": "/api/mcp" }`).
 - Toggle or update a server via `PUT /api/mcp/connections/{id}`; set `"enabled": false` to pause a connection.
 - Remove a server with `DELETE /api/mcp/connections/{id}`; tools are dropped immediately.
 - `GET /api/mcp/status` aggregates live health, so the RAG endpoints surface new tools without restart.
+
+### Cloud Foundry Service Binding
+When deployed to Cloud Foundry, MCP servers can be automatically configured via user-provided services with **automatic URL derivation**:
+
+#### Option 1: Minimal Binding (Auto-derive URL from service name)
+```bash
+# Only specify endpoint - URL is auto-derived from service name
+cf create-user-provided-service mcp-server -p '{
+  "endpoint": "/api/mcp"
+}'
+# Results in: http://mcp-server.apps.internal:8080/api/mcp
+```
+
+#### Option 2: Hostname-based Binding
+```bash
+# Specify hostname when app name differs from service name
+cf create-user-provided-service my-mcp-service -p '{
+  "hostname": "actual-mcp-app",
+  "endpoint": "/api/mcp"
+}'
+# Results in: http://actual-mcp-app.apps.internal:8080/api/mcp
+```
+
+#### Option 3: Custom Port/Protocol
+```bash
+# Full customization with HTTPS and custom port
+cf create-user-provided-service secure-mcp -p '{
+  "hostname": "mcp-app",
+  "port": "9443",
+  "protocol": "https",
+  "endpoint": "/api/v1/mcp",
+  "apiKey": "your-api-key"
+}'
+# Results in: https://mcp-app.apps.internal:9443/api/v1/mcp
+```
+
+#### Option 4: Explicit URL (backward compatibility)
+```bash
+# Traditional approach with explicit URL
+cf create-user-provided-service mcp-server -p '{
+  "url": "http://custom-host:8090",
+  "endpoint": "/api/mcp"
+}'
+```
+
+**Binding and Deployment:**
+```bash
+cf bind-service spring-metal mcp-server
+cf restage spring-metal
+```
+
+The app automatically detects MCP services by name, tags, or presence of `endpoint` field. Service bindings take precedence over manual configuration.
 
 ---
 

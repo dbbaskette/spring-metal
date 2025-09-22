@@ -4,11 +4,20 @@ public class ApplicationInfo {
     private String[] profiles;
     private String[] services;
     private String instance;
+    private boolean llmEnabled;
 
     public ApplicationInfo(String[] profiles, String[] services, String instance) {
         this.profiles = profiles;
         this.services = services;
         this.instance = instance;
+        this.llmEnabled = false;
+    }
+
+    public ApplicationInfo(String[] profiles, String[] services, String instance, boolean llmEnabled) {
+        this.profiles = profiles;
+        this.services = services;
+        this.instance = instance;
+        this.llmEnabled = llmEnabled;
     }
 
     public String[] getProfiles() {
@@ -33,5 +42,13 @@ public class ApplicationInfo {
 
     public void setInstance(String instance) {
         this.instance = instance;
+    }
+
+    public boolean isLlmEnabled() {
+        return llmEnabled;
+    }
+
+    public void setLlmEnabled(boolean llmEnabled) {
+        this.llmEnabled = llmEnabled;
     }
 }

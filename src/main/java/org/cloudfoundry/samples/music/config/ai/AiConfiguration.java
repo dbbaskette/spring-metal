@@ -53,25 +53,37 @@ public class AiConfiguration {
 	}
 
 	@Configuration
-	@Profile("cloud")
+	@Profile("cloud & llm")  // Requires BOTH cloud AND llm profiles
 	@ConditionalOnClass(GenaiLocator.class)
 	public static class CloudAiConfiguration {
 
 		@Bean
 		@Primary
+		@ConditionalOnMissingBean
 		public ChatModel chatModel(GenaiLocator genaiLocator) {
-			return genaiLocator.getFirstAvailableChatModel();
+			try {
+				return genaiLocator.getFirstAvailableChatModel();
+			} catch (Exception e) {
+				// No chat model available, return null or throw a more specific exception
+				throw new IllegalStateException("No chat model available from GenAI service", e);
+			}
 		}
 
 		@Bean
 		@Primary
+		@ConditionalOnMissingBean
 		public EmbeddingModel embeddingModel(GenaiLocator genaiLocator) {
-			return genaiLocator.getFirstAvailableEmbeddingModel();
+			try {
+				return genaiLocator.getFirstAvailableEmbeddingModel();
+			} catch (Exception e) {
+				// No embedding model available
+				throw new IllegalStateException("No embedding model available from GenAI service", e);
+			}
 		}
 	}
 
 	@Configuration
-	@Profile("local")
+	@Profile("local & llm")  // Requires BOTH local AND llm profiles
 	public static class LocalAiConfiguration {
 
 		@Bean

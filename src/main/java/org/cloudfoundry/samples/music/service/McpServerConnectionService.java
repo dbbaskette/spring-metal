@@ -3,9 +3,13 @@ package org.cloudfoundry.samples.music.service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.ArrayList;
 
 import org.cloudfoundry.samples.music.domain.McpServerConnection;
 import org.cloudfoundry.samples.music.repositories.jpa.McpServerConnectionRepository;
+import org.cloudfoundry.samples.music.config.CloudFoundryMcpConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 @Transactional
 public class McpServerConnectionService {
 
+    private static final Logger logger = LoggerFactory.getLogger(McpServerConnectionService.class);
+
     private final McpServerConnectionRepository repository;
     private final DynamicMcpClientManager clientManager;
 
@@ -30,7 +36,15 @@ public class McpServerConnectionService {
     }
 
     public List<McpServerConnection> listConnections() {
-        return repository.findAll();
+        List<McpServerConnection> connections = new ArrayList<>();
+
+        // Add database-persisted connections
+        connections.addAll(repository.findAll());
+
+        // Add CF-bound ephemeral connections
+        connections.addAll(CloudFoundryMcpConfiguration.getCfBoundConnections().values());
+
+        return connections;
     }
 
     public McpServerConnection getConnection(UUID id) {
@@ -38,14 +52,31 @@ public class McpServerConnectionService {
                 .orElseThrow(() -> new IllegalArgumentException("Connection with id %s not found".formatted(id)));
     }
 
+    public McpServerConnection findByName(String name) {
+        // First check database-persisted connections
+        var dbConnection = repository.findByNameIgnoreCase(name).orElse(null);
+        if (dbConnection != null) {
+            return dbConnection;
+        }
+
+        // Then check CF-bound ephemeral connections
+        return CloudFoundryMcpConfiguration.getCfBoundConnections().get(name);
+    }
+
     public McpServerConnection createConnection(String name, String baseUrl, String endpoint, Boolean enabled,
             Map<String, String> headers) {
         Assert.hasText(name, "Connection name must not be empty");
         Assert.hasText(baseUrl, "Connection baseUrl must not be empty");
 
+        // Check if name exists in database
         repository.findByNameIgnoreCase(name).ifPresent(existing -> {
             throw new IllegalArgumentException("Connection name '%s' already exists".formatted(name));
         });
+
+        // Check if name exists in CF-bound connections
+        if (CloudFoundryMcpConfiguration.getCfBoundConnections().containsKey(name)) {
+            throw new IllegalArgumentException("Connection name '%s' already exists as CF-bound service".formatted(name));
+        }
 
         McpServerConnection connection = new McpServerConnection();
         connection.setName(name.trim());
@@ -92,6 +123,20 @@ public class McpServerConnectionService {
         return repository.save(connection);
     }
 
+    public McpServerConnection updateConnection(McpServerConnection connection) {
+        updateRuntimeRegistration(connection);
+        return repository.save(connection);
+    }
+
+    public McpServerConnection saveConnection(McpServerConnection connection) {
+        if (connection.getEndpoint() != null) {
+            connection.setEndpoint(normalizeEndpoint(connection.getEndpoint()));
+        }
+        McpServerConnection savedConnection = repository.save(connection);
+        updateRuntimeRegistration(savedConnection);
+        return savedConnection;
+    }
+
     public void deleteConnection(UUID id) {
         McpServerConnection connection = getConnection(id);
         repository.delete(connection);
@@ -125,6 +170,12 @@ public class McpServerConnectionService {
     @EventListener(ApplicationReadyEvent.class)
     public void initializeExistingConnections() {
         repository.findAll().forEach(connection -> {
+            // Skip database connections if there's a CF-bound connection with the same name
+            if (CloudFoundryMcpConfiguration.getCfBoundConnections().containsKey(connection.getName())) {
+                logger.info("Skipping database connection '{}' as CF-bound connection exists with same name", connection.getName());
+                return;
+            }
+
             if (connection.isEnabled()) {
                 try {
                     clientManager.register(connection);

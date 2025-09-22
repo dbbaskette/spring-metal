@@ -35,6 +35,11 @@ public class DynamicMcpToolCallbackProvider implements ToolCallbackProvider {
     private final ObjectProvider<McpToolNamePrefixGenerator> namePrefixProvider;
     private final ObjectProvider<ToolContextToMcpMetaConverter> metaConverterProvider;
 
+    // Cache to prevent duplicate tool registration during the same request
+    private volatile ToolCallback[] cachedToolCallbacks = null;
+    private volatile long lastCacheUpdate = 0;
+    private static final long CACHE_EXPIRY_MS = 30000; // 30 seconds
+
     public DynamicMcpToolCallbackProvider(DynamicMcpClientManager clientManager,
             ObjectProvider<List<McpAsyncClient>> baseClientsProvider,
             ObjectProvider<McpToolFilter> toolFilterProvider,
@@ -49,6 +54,13 @@ public class DynamicMcpToolCallbackProvider implements ToolCallbackProvider {
 
     @Override
     public ToolCallback[] getToolCallbacks() {
+        // Check cache first to prevent duplicate tool registrations
+        long currentTime = System.currentTimeMillis();
+        if (cachedToolCallbacks != null && (currentTime - lastCacheUpdate) < CACHE_EXPIRY_MS) {
+            logger.debug("🔧 Returning cached tool callbacks ({} tools)", cachedToolCallbacks.length);
+            return cachedToolCallbacks;
+        }
+
         List<McpAsyncClient> clients = new ArrayList<>();
 
         List<McpAsyncClient> baseClients = baseClientsProvider.getIfAvailable(() -> List.<McpAsyncClient>of());
@@ -117,6 +129,10 @@ public class DynamicMcpToolCallbackProvider implements ToolCallbackProvider {
         if (toolCallbacks.length == 0) {
             logger.warn("⚠️  No tools discovered from {} MCP clients - check server connectivity and tool definitions", clients.size());
         }
+
+        // Update cache
+        cachedToolCallbacks = toolCallbacks;
+        lastCacheUpdate = currentTime;
 
         return toolCallbacks;
     }

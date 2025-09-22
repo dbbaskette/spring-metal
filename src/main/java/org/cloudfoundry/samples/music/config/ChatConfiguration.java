@@ -48,7 +48,6 @@ public class ChatConfiguration {
         }
 
         return chatClientBuilder
-            .defaultToolCallbacks(tools)
             .build();
     }
 

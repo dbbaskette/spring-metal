@@ -100,11 +100,23 @@ angular.module('info', ['ngResource']).
 
         $scope.openBoneyardChat = function() {
             console.log('Opening Boneyard chat...');
-            ChatService.toggleChat();
+            // Only open chat if LLM is enabled
+            if ($scope.info && $scope.info.llmEnabled) {
+                ChatService.toggleChat();
+            } else {
+                console.warn('Chat is not available - LLM service not configured');
+            }
         };
 
         $scope.sendMessage = function() {
             console.log('sendMessage called, input:', $scope.chat.input, 'loading:', $scope.chat.loading);
+
+            // Check if LLM is enabled
+            if (!$scope.info || !$scope.info.llmEnabled) {
+                console.error('Cannot send message - LLM service not available');
+                return;
+            }
+
             if (!$scope.chat.input || !$scope.chat.input.trim() || $scope.chat.loading) {
                 console.log('Message sending blocked - empty input or loading');
                 return;
